@@ -4,7 +4,7 @@ const { Plugin } = require('powercord/entities');
 const Lodash = window._;
 
 const Emoji = getModule(['isEmojiDisabled'], false);
-const User = getModule(['getNullableCurrentUser'], false);
+const User = getModule(['getCurrentUser', 'getUser'], false);
 const Guild = getModule(['getLastSelectedGuildId'], false);
 const Emojis = getModule(['AUTOCOMPLETE_OPTIONS'], false);
 
