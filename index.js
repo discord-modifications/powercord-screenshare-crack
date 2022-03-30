@@ -1,65 +1,24 @@
-const { inject, uninject } = require('powercord/injector');
 const { getModule } = require('powercord/webpack');
 const { Plugin } = require('powercord/entities');
-const Lodash = window._;
 
-const Emoji = getModule(['isEmojiDisabled'], false);
-const User = getModule(['getCurrentUser', 'getUser'], false);
-const Guild = getModule(['getLastSelectedGuildId'], false);
-const Emojis = getModule(['AUTOCOMPLETE_OPTIONS'], false);
+const Lodash = window._;
+const Stream = getModule(['ApplicationStreamFPSButtons'], false);
 
 module.exports = class ScreenshareCrack extends Plugin {
    startPlugin() {
-      inject('screenshare-crack', User, 'getCurrentUser', (_, res) => {
-         if (res) {
-            const hasPremiumPerks = Boolean(res.hasPremiumPerks);
-            const result = Lodash.cloneDeep(res);
+      const requirements = Stream.ApplicationStreamSettingRequirements;
+      this.original = Lodash.cloneDeep(requirements);
 
-            result.premiumType = 2;
-            Object.defineProperty(result, 'hasPremiumPerks', {
-               get: () => hasPremiumPerks
-            });
-
-            return result;
+      for (let i = 0; i < requirements.length; i++) {
+         for (const key in requirements[i]) {
+            if (!~['resolution', 'fps'].indexOf(key)) {
+               delete requirements[i][key];
+            }
          }
-
-         return res;
-      });
-
-      inject('is-emoji-disabled', Emoji, 'isEmojiDisabled', ([emoji, channel], res) => {
-         const user = User.getCurrentUser();
-         const guild = Guild.getGuildId();
-
-         if (user?.originalPremiumType > 0) return res;
-
-         if (!emoji.guildId || (guild == emoji.guildId && !emoji.animated) || user.hasPremiumPerks) {
-            return false;
-         }
-
-         return true;
-      });
-
-      inject('is-emoji-filtered', Emojis.AUTOCOMPLETE_OPTIONS.EMOJIS_AND_STICKERS, 'queryResults', (args, res) => {
-         const user = User.getCurrentUser();
-         const guild = Guild.getGuildId();
-
-         if (!user.hasPremiumPerks) {
-            res.results.emojis = res.results.emojis.filter(emoji => {
-               if (!emoji.guildId || (guild == emoji.guildId && !emoji.animated) || user.hasPremiumPerks) {
-                  return true;
-               }
-
-               return false;
-            });
-         }
-
-         return res;
-      });
+      }
    };
 
    pluginWillUnload() {
-      uninject('screenshare-crack');
-      uninject('is-emoji-disabled');
-      uninject('is-emoji-filtered');
+      Stream.ApplicationStreamSettingRequirements = this.original;
    }
 };
